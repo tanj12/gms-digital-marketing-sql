@@ -7,7 +7,6 @@
 - **Techniques:** Advanced SQL including subqueries, window functions, aggregations, and joins  
 - **Objective:** Transform raw session and traffic data into actionable insights for acquisition, retention, monetization, and mobile experience optimization  
 
-
 ---
 
 ## Key Insights at a Glance
@@ -23,17 +22,17 @@ This analysis of the Google Merchandise Store dataset (Oct–Dec 2016) uncovered
 
 
 ---
-![Device Monetize](../reports/11_web_monetize_device_chart2.png)    
-![Channel Engagement](../reports/16_web_acq_mon_channel.png)
-![Web Engagement](../reports/07_web_eng_day_graph.png)
+![Device Monetize](reports/11_web_monetize_device_chart2.png)    
+![Channel Engagement](reports/16_web_acq_mon_channel.png)
+![Web Engagement](reports/07_web_eng_day_graph.png)
 
 ### Check Out the scripts 👇
-- [Data Exploration](../SQL/03_data_exploration.sql)
-- [Identify Unique Duplicate Value](../SQL/06_unique_duplicate_identifier.sql)
-- [Website Engagement By Day](../SQL/08_webengagement_day.sql)
-- [Website Monetisation By Device](../SQL/11_web_monetization_device.sql)
-- [Website Retention](../SQL/13_website_retention.sql)
-- [Website Acquisition By Channel](../SQL/15_website_acquistion_channel.sql)
+- [Data Exploration](SQL/03_data_exploration.sql)
+- [Identify Unique Duplicate Value](SQL/06_unique_duplicate_identifier.sql)
+- [Website Engagement By Day](SQL/08_webengagement_day.sql)
+- [Website Monetisation By Device](SQL/11_web_monetization_device.sql)
+- [Website Retention](SQL/13_website_retention.sql)
+- [Website Acquisition By Channel](SQL/15_website_acquistion_channel.sql)
 ---
 
 ## DATASETS
@@ -61,7 +60,7 @@ In my role as a marketing analyst at Google, I used SQL to create a database and
 In MySQL Workbench, I create a new database called `gms_project`. This database will be used to store tables and data as part of this project.
 - CREATE DATABASE `gms_project`;
 
-![set up](../reports/01_setup.png)
+![set up](reports/01_setup.png)
 
 ## COMBINING DATASETS
 Our first task is to create a unified view of the data across the three months. The combined dataset will serve as the base of our analysis.
@@ -86,7 +85,7 @@ To get a sense of the data we're working with, we’ll take a look at the first 
 SELECT * FROM gms_project.data_combined
 LIMIT 5;
 ```
-![data exploration](../reports/02_data_exploration.png)
+![data exploration](reports/02_data_exploration.png)
 **Column Overview:** The dataset contains rows with identifiers like **`fullvisitorid`** and **`visitid`**, along with date of visits, and details of traffic sources in the **`channelGrouping`**, **`source`**, and **`medium`** columns. It offers insights into user engagement through metrics such as visits, pageviews, time on website, and bounces. Additionally, it includes e-commerce data like transactions and revenue, user-specific information (operating system, mobile device usage, device type), and geographical data (region, country, continent, subcontinent). Some fields, like **`adcontent`**, are missing data.
 
 **Row Overview:** At first glance, it seems that each row represents a single session on the website. The **`visitid`** column appears to be a unique identifier for each session, and therefore, needs closer investigation. 
@@ -98,7 +97,7 @@ SELECT
     COUNT(visitid) AS non_null_rows
 FROM gms_project.data_combined;
 ```
-![null](../reports/03_null.png)
+![null](reports/03_null.png)
 It appears that there are no NULL values in the **`visitid`** column, indicating that each session captured in the data has been assigned an identifier. The absence of NULL values in this key column is a positive sign for data integrity.
 
 Next, we'll check for duplicate values in the **`visitid`** column. Identifying duplicates is important as they can significantly impact the accuracy of our analysis. We'll determine whether these duplicates represent valid data repetitions or if they need to be addressed.
@@ -111,7 +110,7 @@ GROUP BY 1
 HAVING COUNT(*) > 1
 LIMIT 5;
 ```
-![duplicate](../reports/04_duplicate.png)
+![duplicate](reports/04_duplicate.png)
 The **`visitid`** column in the dataset, while seemingly unique, does not serve as a unique identifier for each session. This is because **`visitid`** represents the timestamp when a visit or session begins. Since multiple visitors can start their sessions at the same exact time, **`visitid`** alone is not sufficient to uniquely identify each session.
 
 To create a unique identifier for each session, we need to combine **`visitid`** with another column, **`fullvisitorid`**. The **`fullvisitorid`** column uniquely identifies each visitor to the website. By concatenating **`fullvisitorid`** and **`visitid`**, we can create a new identifier that is unique for each session. This new identifier will ensure that each session is distinctly recognized, even if multiple sessions start at the same time.
@@ -124,7 +123,7 @@ GROUP BY 1
 HAVING COUNT(*) > 1
 LIMIT 5;
 ```
-![unique identifier](../reports/05_unique_identifier.png)
+![unique identifier](reports/05_unique_identifier.png)
 From the analysis of the data, it appears that we still have two duplicate entries. This is likely due to how sessions are tracked around midnight. In many web analytics systems, a visitor's session is reset at midnight. This means that if a visitor is active on the website across midnight, their activity before and after midnight is counted as two separate sessions. However, if the **`visitid`** is based on the start time of the session, then the visitor will have the same **`visitid`** for both sessions. When we concatenate this **`visitid`** with the **`fullvisitorid`**, the resulting **`unique_session_id`** will be the same for both sessions. Therefore, despite being on the website across two different sessions (before and after midnight), the visitor appears in our data with the same **`unique_session_id`** for both sessions. Let’s examine one example.
 
 *Note: Our dataset timestamps are in UTC (Coordinated Universal Time), the main time standard used globally, which remains constant year-round. As our analysis focuses on US data, we'll convert these timestamps to PDT (Pacific Daylight Time). PDT applies to the US and Canadian Pacific Time Zone during summer months, operating 7 hours behind UTC (UTC-7). In winter, this region switches to PST (Pacific Standard Time), which is 8 hours behind UTC.*
@@ -139,7 +138,7 @@ GROUP BY 1,2
 HAVING unique_session_id = "4961200072408009421-1480578925"
 LIMIT 5;
 ```
-![unique session](../reports/06_unique_session.png)
+![unique session](reports/06_unique_session.png)
 
 In our analysis, we acknowledge this scenario and have decided to treat these two sessions as a single continuous session, maintaining the same `unique_session_id`. This approach aligns with our analytical objectives and simplifies our dataset. Therefore, we won't modify the session tracking mechanism to separate these instances into distinct sessions.
 
@@ -162,7 +161,7 @@ FROM (
 GROUP BY 1
 ORDER BY 1;
 ```
-![website engagement day](../reports/07_web_eng_day.png)
+![website engagement day](reports/07_web_eng_day.png)
 ![graph](../reports/07_web_eng_day_graph.png)
 We observe an uptick in web traffic as we approach the holiday season in December. In addition, web traffic consistently peaks during weekdays and tapers off during weekends. To better illustrate this trend, we'll extract the name of the day from the visit date.
 ```sql
@@ -179,7 +178,7 @@ FROM (
 GROUP BY 1
 ORDER BY 2 DESC;
 ```
-![engagement by weekday](../reports/08_web_eng_weekday.png)
+![engagement by weekday](reports/08_web_eng_weekday.png)
 We notice a variation in visitor numbers, with web traffic peaking mid-week, particularly on Tuesdays and Wednesdays, and then declining over the weekend. This pattern indicates that user engagement on the website fluctuates throughout the week. This insight can be crucial for planning content updates and marketing initiatives.
 
 ## Website Engagement & Monetization by Day
@@ -204,7 +203,7 @@ FROM (
 GROUP BY 1
 ORDER BY 2 DESC;
 ```
-![web monetization](../reports/10_web_monetize_day.png)
+![web monetization](reports/10_web_monetize_day.png)
 While `Tuesdays` see the most website visits, it's interesting to note that `Mondays` have the highest conversion rate. In contrast, weekends experience a substantial drop in conversions, indicating different visitor behaviors and purchasing patterns between weekdays and weekends.
 
 ## Website Engagement & Monetization by Device
@@ -228,9 +227,9 @@ FROM (
 ) t1
 GROUP BY 1;
 ```
-![monetize device](../reports/11_web_monetize_device.png)
-![chart 1](../reports/11_web_monetize_device_chart1.png)
-![chart 2](../reports/11_web_monetize_device_chart2.png)
+![monetize device](reports/11_web_monetize_device.png)
+![chart 1](reports/11_web_monetize_device_chart1.png)
+![chart 2](reports/11_web_monetize_device_chart2.png)
 While ~25% of sessions originate from mobile devices, only 5% of revenue is generated through them. This significant discrepancy suggests a need to optimize the mobile shopping experience. Marketing strategies should focus on enhancing mobile usability, streamlining the checkout process, and tailoring mobile-specific promotions. Considering the significant number of users who shop on their mobile devices during commutes or workday breaks, a seamless mobile experience on our e-commerce platform is crucial. To further tap into this growing user base, Google might also consider developing a dedicated mobile app, which could substantially increase revenue from mobile users.
 
 ## Website Engagement & Monetization by Region
@@ -259,7 +258,7 @@ FROM (
 GROUP BY 1,2
 ORDER BY 3 DESC;
 ```
-![monetize region](../reports/12_web_monetize_region.png)
+![monetize region](reports/12_web_monetize_region.png)
 The data shows that while only 1% of mobile sessions are from Washington, they contribute to 11% of revenue. Similarly, Illinois sees 3% of sessions but accounts for 9% of revenue. This suggests an untapped opportunity, as these regions have higher conversion rates or transaction values despite fewer sessions. Focusing marketing efforts on these regions could potentially increase revenue, leveraging their higher purchasing effectiveness. Potential approaches could include targeted marketing campaigns, localized promotions, or even exploring the reasons behind the higher conversion rates, such as product preferences or purchasing power.
 
 One limitation in our analysis arises from the fact that some mobile sessions in the dataset are not mapped to any specific region. This means that for a subset of mobile sessions, the **`region`** field is either left blank or marked as **`NULL`**, indicating that the geographic location of these users is unknown or not recorded. Addressing this issue with the Data Engineering team could be vital for ensuring more accurate and comprehensive data for future analyses.
@@ -277,7 +276,7 @@ SELECT
 FROM gms_project.data_combined
 GROUP BY 1;
 ```
-![retention](../reports/13_web_retention.png)
+![retention](reports/13_web_retention.png)
 Interestingly, about 80% of users visit the website only once. This statistic suggests a need for better incentives or value propositions to encourage repeat visits, presenting a major opportunity for enhanced retention strategies such as personalized marketing, loyalty programs, or targeted retargeting campaigns. In contrast, the substantial influx of new visitors reflects successful marketing efforts in brand awareness, effectively attracting people to the site initially. Key factors like a user-friendly interface, engaging content, and smooth navigation play a crucial role here.
 
 ## Website Acquisition
@@ -296,7 +295,7 @@ FROM (
 ) t1
 ORDER BY 1 DESC;
 ```
-![acquisition](../reports/14_web_acquisition.png)
+![acquisition](reports/14_web_acquisition.png)
 A bounce rate within the 20-40% range is generally seen as effective engagement. However, to truly understand visitor behavior and optimize engagement strategies, it's important to analyze the bounce rate by individual channels. This deeper analysis will enable us to tailor our strategies to specific audiences, refine our understanding of user interactions, and allocate marketing resources more efficiently.
 
 ## Website Acquisition by Channel
@@ -318,7 +317,7 @@ FROM (
 GROUP BY 1
 ORDER BY 2 DESC;
 ```
-![channel acquisition](../reports/15_web_acquisition_channel.png)
+![channel acquisition](reports/15_web_acquisition_channel.png)
 Organic Search, Paid Search, and Display exhibit bounce rates of 30-40%, indicating effective visitor engagement and an ability to encourage exploration beyond the landing page. Referral shows the lowest bounce rate, marking it as particularly healthy. However, Direct, Social, and Affiliates, with bounce rates of 40-50%, highlight areas where there is potential for improvement.
 
 ## Website Acquisition & Monetization by Channel
@@ -349,7 +348,7 @@ FROM (
 GROUP BY 1
 ORDER BY 2 DESC;
 ```
-![channel monetization](../reports/16_web_acq_mon_channel.png)
+![channel monetization](reports/16_web_acq_mon_channel.png)
 Referral leads with the lowest bounce rate and highest conversion at 7%, driving strong revenue, making it a prime candidate for expanded partnerships. Organic Search, with the most sessions and a solid 32% bounce rate, shows robust SEO efficacy and good conversion potential. Direct traffic, while high at a 46% bounce rate, has moderate conversions, suggesting a need for more personalized engagement. Social media, despite high traffic, suffers from the lowest conversions, calling for more targeted campaigns. Paid Search and Display, both with 34% bounce rates, demonstrate moderate visitor retention but require improved targeting for better conversions. Lastly, Affiliates, with the highest bounce rate and lowest conversions, need a thorough evaluation of partner quality.
 
 ## RESULTS
